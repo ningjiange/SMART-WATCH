@@ -8,7 +8,8 @@ static const char *TAG = "MPU6050";
 static i2c_master_dev_handle_t dev_handle = NULL;
 
 static esp_err_t mpu6050_write_reg(uint8_t reg, uint8_t value) {
-    return i2c_master_transmit(dev_handle, &reg, 1, 100);
+    uint8_t buf[2] = {reg, value};
+    return i2c_master_transmit(dev_handle, buf, 2, 100);
 }
 
 static esp_err_t mpu6050_read_regs(uint8_t reg, uint8_t *data, size_t len) {

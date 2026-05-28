@@ -3,6 +3,7 @@
 #define MPU6050_H
 
 #include "driver/i2c_master.h"
+#include "esp_err.h"
 
 // MPU6050 I2C 地址（AD0 接 GND 时为 0x68）
 #define MPU6050_ADDR 0x68

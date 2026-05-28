@@ -27,6 +27,7 @@ typedef struct {
     float gyro_z;     // 陀螺仪 Z 轴 (°/s)
     float pitch;      // 俯仰角 (°)
     float roll;       // 横滚角 (°)
+    // 注：MPU6050 无磁力计，无法独立计算 Yaw，需外接磁力计或用陀螺仪积分近似
 } mpu6050_data_t;
 
 // API 函数

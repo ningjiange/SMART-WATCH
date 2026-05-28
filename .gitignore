@@ -1,0 +1,12 @@
+build/
+sdkconfig
+sdkconfig.old
+*.pyc
+__pycache__/
+.vscode/
+*.swp
+*~
+build.ps1
+build.bat
+build_temp.bat
+build_output.log

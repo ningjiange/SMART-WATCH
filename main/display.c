@@ -1,5 +1,6 @@
 // main/display.c — LVGL 8.4 + ILI9341 显示模块
 #include "display.h"
+#include "cube.h"
 #include "esp_log.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
@@ -89,21 +90,24 @@ static void create_ui(void) {
     lv_label_set_text(label_title, "IMU Gesture Visualizer");
     lv_obj_set_style_text_color(label_title, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_title, &lv_font_montserrat_14, 0);
-    lv_obj_align(label_title, LV_ALIGN_TOP_MID, 0, 10);
+    lv_obj_align(label_title, LV_ALIGN_TOP_MID, 0, 5);
 
-    // Pitch 标签
+    // 3D 立方体（上半部分）
+    cube_init(scr);
+
+    // Pitch 标签（下半部分）
     label_pitch = lv_label_create(scr);
     lv_label_set_text(label_pitch, "Pitch: 0.0");
     lv_obj_set_style_text_color(label_pitch, lv_color_make(0, 255, 0), 0);
     lv_obj_set_style_text_font(label_pitch, &lv_font_montserrat_14, 0);
-    lv_obj_align(label_pitch, LV_ALIGN_LEFT_MID, 20, -30);
+    lv_obj_align(label_pitch, LV_ALIGN_LEFT_MID, 20, 40);
 
     // Pitch 进度条
     bar_pitch = lv_bar_create(scr);
     lv_obj_set_size(bar_pitch, 200, 15);
     lv_bar_set_range(bar_pitch, 0, 100);
     lv_bar_set_value(bar_pitch, 50, LV_ANIM_OFF);
-    lv_obj_align(bar_pitch, LV_ALIGN_LEFT_MID, 20, -10);
+    lv_obj_align(bar_pitch, LV_ALIGN_LEFT_MID, 20, 60);
     lv_obj_set_style_bg_color(bar_pitch, lv_color_make(50, 50, 50), LV_PART_MAIN);
     lv_obj_set_style_bg_color(bar_pitch, lv_color_make(0, 255, 0), LV_PART_INDICATOR);
 
@@ -112,14 +116,14 @@ static void create_ui(void) {
     lv_label_set_text(label_roll, "Roll: 0.0");
     lv_obj_set_style_text_color(label_roll, lv_color_make(0, 128, 255), 0);
     lv_obj_set_style_text_font(label_roll, &lv_font_montserrat_14, 0);
-    lv_obj_align(label_roll, LV_ALIGN_LEFT_MID, 20, 20);
+    lv_obj_align(label_roll, LV_ALIGN_LEFT_MID, 20, 90);
 
     // Roll 进度条
     bar_roll = lv_bar_create(scr);
     lv_obj_set_size(bar_roll, 200, 15);
     lv_bar_set_range(bar_roll, 0, 100);
     lv_bar_set_value(bar_roll, 50, LV_ANIM_OFF);
-    lv_obj_align(bar_roll, LV_ALIGN_LEFT_MID, 20, 40);
+    lv_obj_align(bar_roll, LV_ALIGN_LEFT_MID, 20, 110);
     lv_obj_set_style_bg_color(bar_roll, lv_color_make(50, 50, 50), LV_PART_MAIN);
     lv_obj_set_style_bg_color(bar_roll, lv_color_make(0, 128, 255), LV_PART_INDICATOR);
 
@@ -128,7 +132,7 @@ static void create_ui(void) {
     lv_label_set_text(label_status, "Mode: FREE | WiFi: --");
     lv_obj_set_style_text_color(label_status, lv_color_make(128, 128, 128), 0);
     lv_obj_set_style_text_font(label_status, &lv_font_montserrat_14, 0);
-    lv_obj_align(label_status, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_align(label_status, LV_ALIGN_BOTTOM_MID, 0, -5);
 }
 
 esp_err_t display_init(void) {
@@ -203,6 +207,10 @@ void display_update(const mpu6050_data_t *data) {
         create_ui();
     }
 
+    // 更新 3D 立方体
+    cube_update(data->pitch, data->roll);
+
+    // 更新角度显示
     char buf[32];
     snprintf(buf, sizeof(buf), "Pitch: %+.1f", data->pitch);
     lv_label_set_text(label_pitch, buf);

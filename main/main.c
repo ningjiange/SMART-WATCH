@@ -1,4 +1,4 @@
-// main/main.c — Phase 2a: LVGL 显示角度
+// main/main.c — Phase 2: LVGL 显示 + 3D 立方体
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -51,6 +51,6 @@ void app_main(void) {
         if (mpu6050_read(&mpu_data) == ESP_OK) {
             display_update(&mpu_data);
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }

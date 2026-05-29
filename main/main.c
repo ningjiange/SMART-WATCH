@@ -10,6 +10,8 @@
 #include "web_server.h"
 #include "dht11.h"
 #include "buzzer.h"
+#include "input.h"
+#include "page_manager.h"
 #include <math.h>
 
 static const char *TAG = "MAIN";
@@ -93,6 +95,27 @@ static void wifi_task(void *pvParameters) {
     vTaskDelete(NULL);
 }
 
+// 按键检测任务（高优先级，快速响应）
+static void button_task(void *pvParameters) {
+    ESP_LOGI(TAG, "Button task started");
+    while (1) {
+        input_event_t event = input_read();
+        if (event == INPUT_UP) {
+            page_manager_next();
+            ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
+            vTaskDelay(pdMS_TO_TICKS(300));  // 防抖等待
+        } else if (event == INPUT_DOWN) {
+            page_manager_prev();
+            ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
+            vTaskDelay(pdMS_TO_TICKS(300));
+        } else if (event == INPUT_SELECT) {
+            page_manager_select();
+            vTaskDelay(pdMS_TO_TICKS(300));
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));  // 10ms 检测一次
+    }
+}
+
 void app_main(void) {
     ESP_LOGI(TAG, "=== IMU Gesture Visualizer - Phase 5 ===");
 
@@ -135,6 +158,13 @@ void app_main(void) {
     xTaskCreate(sensor_task, "sensor_task", 4096, NULL, 4, NULL);
     xTaskCreate(buzzer_task, "buzzer_task", 2048, NULL, 3, NULL);
 
+    // 初始化输入设备和页面管理器
+    input_init();
+    page_manager_init();
+
+    // 按键检测任务（高优先级）
+    xTaskCreate(button_task, "button_task", 2048, NULL, 6, NULL);
+
     ESP_LOGI(TAG, "Starting display loop...");
 
     while (1) {
@@ -160,6 +190,6 @@ void app_main(void) {
             display_update(&g_display_data);
             web_server_update_data(&g_mpu_data);
         }
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }

@@ -168,20 +168,117 @@ if (who_am_i != 0x68 && who_am_i != 0x70) {
 
 ---
 
+### 7. LVGL 白屏问题
+
+**问题**：屏幕初始化成功但显示白屏
+
+**解决方案**：
+1. 使用 `esp_lvgl_port` 而不是原生 LVGL API
+2. 确保 LVGL 任务正确启动
+3. 检查显示缓冲区大小
+
+```c
+// 正确：使用 esp_lvgl_port
+const lvgl_port_cfg_t lvgl_cfg = ESP_LVGL_PORT_INIT_CONFIG();
+ESP_ERROR_CHECK(lvgl_port_init(&lvgl_cfg));
+
+// 错误：原生 API 可能导致白屏
+lv_init();
+```
+
+---
+
+### 8. 按键 GPIO 问题
+
+**问题**：GPIO 34/35 按键不响应
+
+**根本原因**：GPIO 34/35 是输入专用引脚，没有内部上拉电阻
+
+**解决方案**：
+1. 外接上拉电阻（10KΩ 到 3.3V）
+2. 或改用有内部上拉的 GPIO（如 12, 14, 27）
+
+```c
+// 推荐使用的 GPIO（有内部上拉）
+#define GPIO_INPUT_UP      12
+#define GPIO_INPUT_DOWN    14
+#define GPIO_INPUT_SELECT  27
+```
+
+---
+
+### 9. DHT11 读取不稳定
+
+**问题**：DHT11 数据跳动、校验错误
+
+**解决方案**：
+1. 使用 `ets_delay_us()` 代替 `esp_rom_delay_us()`
+2. 添加数据过滤，只返回有效值
+3. 错误时返回上一次的有效数据
+
+```c
+#include "rom/ets_sys.h"
+
+// 数据有效性检查
+if (temp < -20 || temp > 60 || humi < 0 || humi > 100) {
+    *temperature = last_temp;
+    *humidity = last_humi;
+    return ESP_OK;
+}
+```
+
+---
+
+### 10. 按键响应不灵敏
+
+**问题**：按键按下后反应慢或无反应
+
+**根本原因**：
+1. 按键检测在主循环中被其他任务阻塞
+2. 消抖等待时间太长
+
+**解决方案**：
+1. 将按键检测放到独立的高优先级任务
+2. 减少消抖时间（20ms）
+3. 按键触发后添加防抖等待
+
+```c
+// 独立按键任务（优先级 6）
+static void button_task(void *pvParameters) {
+    while (1) {
+        input_event_t event = input_read();
+        if (event != INPUT_NONE) {
+            // 处理按键
+            vTaskDelay(pdMS_TO_TICKS(300));  // 防抖等待
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));  // 10ms 检测一次
+    }
+}
+```
+
+---
+
 ## ESP32 引脚使用情况
 
 | 引脚 | 用途 | 备注 |
 |------|------|------|
 | GPIO 2 | LCD DC | 数据/命令选择 |
 | GPIO 4 | LCD RESET | 复位 |
+| GPIO 12 | 按键上翻 | 有内部上拉 |
+| GPIO 14 | 按键下翻 | 有内部上拉 |
 | GPIO 15 | LCD CS | 片选 |
 | GPIO 18 | LCD SCK | SPI 时钟 |
 | GPIO 19 | LCD MISO | SPI 主入（可选） |
 | GPIO 23 | LCD MOSI | SPI 主出 |
+| GPIO 25 | DHT11 | 温湿度传感器 |
+| GPIO 26 | 蜂鸣器 | 低电平有效 |
+| GPIO 27 | 按键确认 | 有内部上拉 |
 | GPIO 32 | MPU6050 SDA | I2C 数据 |
 | GPIO 33 | MPU6050 SCL | I2C 时钟 |
 
-**注意**：GPIO 21/22 在某些配置下会被占用，避免使用
+**注意**：
+- GPIO 21/22 在某些配置下会被占用，避免使用
+- GPIO 34/35 是输入专用，无内部上拉，需外接电阻
 
 ---
 
@@ -205,3 +302,8 @@ if (who_am_i != 0x68 && who_am_i != 0x70) {
 | 2026-05-29 | 添加 3D 立方体 | Phase 2b: 可视化 |
 | 2026-05-29 | 添加 WiFi Web Server | Phase 3: 远程查看 |
 | 2026-05-29 | 修复 WiFi+I2C 冲突 | MPU6050 固定到 Core 1 |
+| 2026-05-29 | 移除 3D 立方体 | Phase 1: 重构为智能手表 |
+| 2026-05-29 | 添加 DHT11 + 蜂鸣器 | Phase 2: 传感器集成 |
+| 2026-05-29 | 添加按键 + 页面管理 | Phase 3: 输入设备 |
+| 2026-05-29 | 修复按键 GPIO | GPIO 34/35 改为 12/14/27 |
+| 2026-05-29 | 修复按键响应 | 独立任务 + 防抖 |

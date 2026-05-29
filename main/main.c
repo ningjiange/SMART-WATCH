@@ -1,4 +1,4 @@
-// main/main.c — Phase 4: LVGL + 3D 立方体 + WiFi + BLE
+// main/main.c — Phase 5: UI 布局 + 占位数据
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -15,7 +15,14 @@ static const char *TAG = "MAIN";
 
 // 全局传感器数据（互斥访问）
 static mpu6050_data_t g_mpu_data;
+static sensor_display_data_t g_display_data;
 static SemaphoreHandle_t g_data_mutex;
+
+// 占位数据来源说明：
+// - 温湿度：DHT11 (GPIO 25) 驱动未实现，暂用占位值
+// - 时间：NTP 网络同步未实现，暂用占位字符串
+// - 天气：wttr.in API 未实现，暂用占位文本
+// - IMU：MPU6050 已实现真实数据读取
 
 // MPU6050 任务（高优先级，独立 I2C 访问）
 static void mpu_task(void *pvParameters) {
@@ -50,7 +57,7 @@ static void wifi_task(void *pvParameters) {
 }
 
 void app_main(void) {
-    ESP_LOGI(TAG, "=== IMU Gesture Visualizer - Phase 3 ===");
+    ESP_LOGI(TAG, "=== IMU Gesture Visualizer - Phase 5 ===");
 
     g_data_mutex = xSemaphoreCreateMutex();
 
@@ -87,9 +94,28 @@ void app_main(void) {
 
     while (1) {
         if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-            display_update(&g_mpu_data);
-            web_server_update_data(&g_mpu_data);
+            // 填充显示数据
+            g_display_data.pitch = g_mpu_data.pitch;
+            g_display_data.roll = g_mpu_data.roll;
+
+            // === 占位数据（后续替换为真实数据源） ===
+            // DHT11 温湿度（GPIO 25，驱动未实现）
+            g_display_data.temperature = 25.0f;
+            g_display_data.humidity = 50.0f;
+
+            // NTP 时间（驱动未实现）
+            snprintf(g_display_data.time_str, sizeof(g_display_data.time_str), "12:34");
+
+            // wttr.in 天气（驱动未实现）
+            snprintf(g_display_data.weather, sizeof(g_display_data.weather), "Weather: --");
+
+            // WiFi 状态
+            snprintf(g_display_data.wifi_status, sizeof(g_display_data.wifi_status), "Connected");
+
             xSemaphoreGive(g_data_mutex);
+
+            display_update(&g_display_data);
+            web_server_update_data(&g_mpu_data);
         }
         vTaskDelay(pdMS_TO_TICKS(50));
     }

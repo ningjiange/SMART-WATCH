@@ -24,8 +24,8 @@ esp_err_t buzzer_init(gpio_num_t pin)
         return ret;
     }
 
-    // 初始状态为低电平（蜂鸣器关闭）
-    gpio_set_level(pin, 0);
+    // 初始状态为高电平（蜂鸣器关闭，低电平有效）
+    gpio_set_level(pin, 1);
 
     ESP_LOGI(TAG, "Buzzer initialized on pin %d", pin);
     return ESP_OK;
@@ -33,29 +33,29 @@ esp_err_t buzzer_init(gpio_num_t pin)
 
 void buzzer_short_beep(void)
 {
-    gpio_set_level(buzzer_pin, 1);
+    gpio_set_level(buzzer_pin, 0);  // 低电平有效，蜂鸣器开启
     vTaskDelay(pdMS_TO_TICKS(100));
-    gpio_set_level(buzzer_pin, 0);
+    gpio_set_level(buzzer_pin, 1);  // 高电平，蜂鸣器关闭
 }
 
 void buzzer_long_beep(void)
 {
-    gpio_set_level(buzzer_pin, 1);
+    gpio_set_level(buzzer_pin, 0);  // 低电平有效，蜂鸣器开启
     vTaskDelay(pdMS_TO_TICKS(500));
-    gpio_set_level(buzzer_pin, 0);
+    gpio_set_level(buzzer_pin, 1);  // 高电平，蜂鸣器关闭
 }
 
 void buzzer_alarm(void)
 {
     for (int i = 0; i < 10; i++) {
-        gpio_set_level(buzzer_pin, 1);
+        gpio_set_level(buzzer_pin, 0);  // 低电平有效，蜂鸣器开启
         vTaskDelay(pdMS_TO_TICKS(200));
-        gpio_set_level(buzzer_pin, 0);
+        gpio_set_level(buzzer_pin, 1);  // 高电平，蜂鸣器关闭
         vTaskDelay(pdMS_TO_TICKS(100));  // 响声间隔
     }
 }
 
 void buzzer_stop(void)
 {
-    gpio_set_level(buzzer_pin, 0);
+    gpio_set_level(buzzer_pin, 1);  // 高电平，蜂鸣器关闭
 }

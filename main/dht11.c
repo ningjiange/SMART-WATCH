@@ -35,12 +35,11 @@ esp_err_t dht11_read(float *temperature, float *humidity)
         return ESP_ERR_INVALID_ARG;
     }
 
-    // 模拟随机温湿度值（简化版）
-    // 实际 DHT11 读取需要实现单总线时序协议
-    *temperature = 20.0f + (float)(rand() % 150) / 10.0f;  // 20.0 - 35.0 °C
-    *humidity = 30.0f + (float)(rand() % 600) / 10.0f;     // 30.0 - 90.0 %
+    // 返回固定占位值（待 DHT11 硬件接好后替换为真实读取逻辑）
+    *temperature = 25.0f;
+    *humidity = 50.0f;
 
-    ESP_LOGD(TAG, "Temperature: %.1f°C, Humidity: %.1f%%", *temperature, *humidity);
+    ESP_LOGI(TAG, "Temperature: %.1f°C, Humidity: %.1f%%", *temperature, *humidity);
 
     return ESP_OK;
 }

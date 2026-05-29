@@ -1,18 +1,59 @@
-// main/main.c — Phase 2: LVGL 显示 + 3D 立方体
+// main/main.c — Phase 3: LVGL + 3D 立方体 + WiFi Web Server
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 #include "driver/i2c_master.h"
 #include "mpu6050.h"
 #include "display.h"
+#include "web_server.h"
 
 static const char *TAG = "MAIN";
 
-#define I2C_SDA_PIN  21
-#define I2C_SCL_PIN  22
+#define I2C_SDA_PIN  32
+#define I2C_SCL_PIN  33
+
+// 全局传感器数据（互斥访问）
+static mpu6050_data_t g_mpu_data;
+static SemaphoreHandle_t g_data_mutex;
+
+// MPU6050 任务（高优先级，独立 I2C 访问）
+static void mpu_task(void *pvParameters) {
+    // 禁用此任务的看门狗
+    esp_task_wdt_delete(NULL);
+
+    i2c_master_bus_handle_t bus_handle = (i2c_master_bus_handle_t)pvParameters;
+    vTaskDelay(pdMS_TO_TICKS(1000));  // 等待 WiFi 初始化完成
+
+    mpu6050_data_t local_data;
+    if (mpu6050_init(bus_handle, &local_data) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to init MPU6050");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    while (1) {
+        if (mpu6050_read(&local_data) == ESP_OK) {
+            if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+                g_mpu_data = local_data;
+                xSemaphoreGive(g_data_mutex);
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+// WiFi 任务（低优先级）
+static void wifi_task(void *pvParameters) {
+    ESP_LOGI(TAG, "WiFi task started");
+    web_server_init();
+    vTaskDelete(NULL);
+}
 
 void app_main(void) {
-    ESP_LOGI(TAG, "=== IMU Gesture Visualizer - Phase 2a ===");
+    ESP_LOGI(TAG, "=== IMU Gesture Visualizer - Phase 3 ===");
+
+    g_data_mutex = xSemaphoreCreateMutex();
 
     // 初始化显示
     esp_err_t ret = display_init();
@@ -23,7 +64,7 @@ void app_main(void) {
 
     // 初始化 I2C
     i2c_master_bus_config_t bus_config = {
-        .i2c_port = I2C_NUM_0,
+        .i2c_port = I2C_NUM_1,
         .sda_io_num = I2C_SDA_PIN,
         .scl_io_num = I2C_SCL_PIN,
         .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -37,19 +78,20 @@ void app_main(void) {
         while (1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
     }
 
-    // 初始化 MPU6050
-    mpu6050_data_t mpu_data;
-    ret = mpu6050_init(bus_handle, &mpu_data);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize MPU6050");
-        while (1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
-    }
+    // MPU6050 独立高优先级任务，固定到 Core 1
+    xTaskCreatePinnedToCore(mpu_task, "mpu_task", 4096, bus_handle, 5, NULL, 1);
 
-    ESP_LOGI(TAG, "Starting main loop...");
+    // WiFi 低优先级任务
+    xTaskCreate(wifi_task, "wifi_task", 8192, NULL, 2, NULL);
 
+    ESP_LOGI(TAG, "Starting display loop...");
+
+    // 主循环只负责显示更新
     while (1) {
-        if (mpu6050_read(&mpu_data) == ESP_OK) {
-            display_update(&mpu_data);
+        if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            display_update(&g_mpu_data);
+            web_server_update_data(&g_mpu_data);
+            xSemaphoreGive(g_data_mutex);
         }
         vTaskDelay(pdMS_TO_TICKS(50));
     }

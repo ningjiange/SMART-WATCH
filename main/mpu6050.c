@@ -9,11 +9,11 @@ static i2c_master_dev_handle_t dev_handle = NULL;
 
 static esp_err_t mpu6050_write_reg(uint8_t reg, uint8_t value) {
     uint8_t buf[2] = {reg, value};
-    return i2c_master_transmit(dev_handle, buf, 2, 100);
+    return i2c_master_transmit(dev_handle, buf, 2, 200);
 }
 
 static esp_err_t mpu6050_read_regs(uint8_t reg, uint8_t *data, size_t len) {
-    return i2c_master_transmit_receive(dev_handle, &reg, 1, data, len, 100);
+    return i2c_master_transmit_receive(dev_handle, &reg, 1, data, len, 200);
 }
 
 static esp_err_t mpu6050_read_reg(uint8_t reg, uint8_t *value) {
@@ -30,7 +30,7 @@ esp_err_t mpu6050_init(i2c_master_bus_handle_t bus_handle, mpu6050_data_t *data)
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = MPU6050_ADDR,
-        .scl_speed_hz = 400000,
+        .scl_speed_hz = 100000,
     };
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
@@ -62,7 +62,7 @@ esp_err_t mpu6050_read(mpu6050_data_t *data) {
     uint8_t buf[14];
     esp_err_t ret = mpu6050_read_regs(MPU6050_REG_ACCEL_XOUT_H, buf, 14);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read sensor data: %s", esp_err_to_name(ret));
+        ESP_LOGW(TAG, "Read failed: %s", esp_err_to_name(ret));
         return ret;
     }
 

@@ -1,0 +1,156 @@
+<h2>ESP32-WROOM-32 引脚布局 & MPU6050 接线</h2>
+<p class="subtitle">你的开发板核心参数：CH340C USB转串口、Type-C、WiFi+BLE、32Mbit Flash</p>
+
+<div class="section">
+  <h3>ESP32 开发板引脚图（俯视图）</h3>
+  <div class="mockup">
+    <div class="mockup-header">ESP32-WROOM-32 DevKit 引脚分布</div>
+    <div class="mockup-body" style="padding: 20px; font-family: monospace; font-size: 13px; line-height: 1.6;">
+      <div style="display: flex; justify-content: center; gap: 40px;">
+        <!-- Left pins -->
+        <div style="text-align: right; min-width: 160px;">
+          <div><strong>3V3</strong> ─────── 3.3V 电源输出</div>
+          <div><strong>EN</strong> ──────── 使能（复位）</div>
+          <div><strong>VP (GPIO36)</strong> ── ADC 输入</div>
+          <div><strong>VN (GPIO39)</strong> ── ADC 输入</div>
+          <div><strong>GPIO34</strong> ────── 仅输入</div>
+          <div><strong>GPIO35</strong> ────── 仅输入</div>
+          <div><strong>GPIO32</strong> ────── ADC / 触摸</div>
+          <div><strong>GPIO33</strong> ────── ADC / 触摸</div>
+          <div><strong>GPIO25</strong> ────── DAC / 通用</div>
+          <div><strong>GPIO26</strong> ────── DAC / 通用</div>
+          <div><strong>GPIO27</strong> ────── 通用</div>
+          <div><strong>GPIO14</strong> ────── SPI / 通用</div>
+          <div><strong>GPIO12</strong> ────── SPI / 通用</div>
+          <div style="color: #e74c3c;"><strong>GPIO13</strong> ────── SPI / 通用</div>
+          <div><strong>GND</strong> ──────── 地线</div>
+          <div><strong>GPIO15</strong> ────── SPI / 通用</div>
+          <div><strong>GPIO2</strong> ─────── LED（板载）</div>
+          <div><strong>GPIO0</strong> ─────── Boot 按钮</div>
+          <div><strong>GPIO4</strong> ─────── 通用</div>
+          <div><strong>GPIO16</strong> ────── 通用</div>
+          <div><strong>GPIO17</strong> ────── 通用</div>
+          <div><strong>GPIO5</strong> ─────── SPI CS</div>
+          <div><strong>GPIO18</strong> ────── SPI CLK</div>
+          <div><strong>GPIO19</strong> ────── SPI MISO</div>
+          <div><strong>GPIO21</strong> ────── <span style="color: #2ecc71; font-weight: bold;">I2C SDA ★</span></div>
+          <div><strong>GPIO3</strong> ─────── UART TX</div>
+          <div><strong>GPIO1</strong> ─────── UART RX</div>
+          <div><strong>GPIO22</strong> ────── <span style="color: #2ecc71; font-weight: bold;">I2C SCL ★</span></div>
+          <div><strong>GPIO23</strong> ────── SPI MOSI</div>
+        </div>
+        <!-- Center chip -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <div style="width: 120px; height: 200px; border: 3px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #1a1a2e; color: #fff; font-size: 11px; text-align: center; padding: 10px;">
+            <div style="font-size: 14px; font-weight: bold;">ESP32</div>
+            <div style="font-size: 10px; color: #aaa;">WROOM-32</div>
+            <div style="margin-top: 10px; font-size: 9px;">双核 240MHz</div>
+            <div style="font-size: 9px;">WiFi + BLE</div>
+            <div style="font-size: 9px;">520KB SRAM</div>
+          </div>
+          <div style="margin-top: 10px; font-size: 10px; color: #888;">← Type-C USB (CH340C)</div>
+        </div>
+        <!-- Right pins -->
+        <div style="text-align: left; min-width: 160px;">
+          <div><strong>3V3</strong> ─────── 3.3V 电源输出</div>
+          <div><strong>GND</strong> ──────── 地线</div>
+          <div><strong>GPIO15</strong> ────── SPI</div>
+          <div><strong>GPIO2</strong> ─────── 板载 LED</div>
+          <div><strong>GPIO0</strong> ─────── Boot</div>
+          <div><strong>GPIO4</strong> ─────── 通用</div>
+          <div><strong>GPIO16</strong> ────── UART2 RX</div>
+          <div><strong>GPIO17</strong> ────── UART2 TX</div>
+          <div><strong>GPIO5</strong> ─────── SPI CS</div>
+          <div><strong>GPIO18</strong> ────── SPI CLK</div>
+          <div><strong>GPIO19</strong> ────── SPI MISO</div>
+          <div><strong>GPIO21</strong> ────── <span style="color: #2ecc71; font-weight: bold;">I2C SDA ★</span></div>
+          <div><strong>GPIO3</strong> ─────── UART TX (USB)</div>
+          <div><strong>GPIO1</strong> ─────── UART RX (USB)</div>
+          <div><strong>GPIO22</strong> ────── <span style="color: #2ecc71; font-weight: bold;">I2C SCL ★</span></div>
+          <div><strong>GPIO23</strong> ────── SPI MOSI</div>
+          <div><strong>GPIO25</strong> ────── DAC</div>
+          <div><strong>GPIO26</strong> ────── DAC</div>
+          <div><strong>GPIO27</strong> ────── 通用</div>
+          <div><strong>GPIO12</strong> ────── ADC</div>
+          <div><strong>GPIO13</strong> ────── ADC</div>
+          <div><strong>GPIO14</strong> ────── ADC</div>
+          <div><strong>GPIO32</strong> ────── ADC</div>
+          <div><strong>GPIO33</strong> ────── ADC</div>
+          <div><strong>GPIO34</strong> ────── 仅输入</div>
+          <div><strong>GPIO35</strong> ────── 仅输入</div>
+          <div><strong>VP (36)</strong> ──── 仅输入</div>
+          <div><strong>VN (39)</strong> ──── 仅输入</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>MPU6050 接线方案（I2C）</h3>
+  <div class="mockup">
+    <div class="mockup-header">MPU6050 → ESP32 接线表</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tr style="background: #2ecc71; color: white;">
+          <th style="padding: 10px; text-align: left;">MPU6050 引脚</th>
+          <th style="padding: 10px; text-align: left;">→</th>
+          <th style="padding: 10px; text-align: left;">ESP32 引脚</th>
+          <th style="padding: 10px; text-align: left;">说明</th>
+        </tr>
+        <tr style="background: #f8f9fa;">
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>VCC</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">→</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>3V3</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">MPU6050 支持 3.3V 供电</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>GND</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">→</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>GND</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">共地</td>
+        </tr>
+        <tr style="background: #f8f9fa;">
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>SDA</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">→</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>GPIO 21</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">ESP32 默认 I2C SDA</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>SCL</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">→</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>GPIO 22</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">ESP32 默认 I2C SCL</td>
+        </tr>
+        <tr style="background: #f8f9fa;">
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>INT</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">→</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">（可选）GPIO 4</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">中断引脚，初期可不接</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>注意事项（给初学者）</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 12px; border-radius: 4px;">
+      <strong>✓ 可以做</strong>
+      <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px;">
+        <li>MPU6050 用 3.3V 供电（更安全）</li>
+        <li>I2C 引脚可以用任意 GPIO 软件模拟</li>
+        <li>接好线后再通电</li>
+      </ul>
+    </div>
+    <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 12px; border-radius: 4px;">
+      <strong>✗ 不要做</strong>
+      <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px;">
+        <li>不要接 5V 到 MPU6050（虽然有些模块支持，但 3.3V 更安全）</li>
+        <li>不要带电插拔接线</li>
+        <li>GPIO 34/35 只能做输入，不能输出</li>
+      </ul>
+    </div>
+  </div>
+</div>

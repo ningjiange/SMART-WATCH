@@ -1,0 +1,84 @@
+<h2>LVGL 界面风格选择</h2>
+<p class="subtitle">ESP32 + 2.8寸 SPI 屏 (320x240) 的界面风格</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>科技仪表盘风格</h3>
+      <p>深色背景 + 霓虹色数据 + 圆环仪表盘。适合展示 IMU 实时数据，视觉冲击力强。</p>
+      <div style="background:#1a1a2e;border-radius:12px;padding:16px;margin-top:12px;color:#00fff5;font-family:monospace;">
+        <div style="text-align:center;font-size:11px;color:#888;margin-bottom:8px;">DASHBOARD STYLE</div>
+        <div style="display:flex;justify-content:space-around;">
+          <div style="text-align:center;">
+            <div style="width:80px;height:80px;border-radius:50%;border:3px solid #00fff5;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+              <div style="font-size:20px;font-weight:bold;">23.5°</div>
+            </div>
+            <div style="font-size:10px;color:#00fff5;margin-top:4px;">PITCH</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:80px;height:80px;border-radius:50%;border:3px solid #ff00ff;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+              <div style="font-size:20px;font-weight:bold;">-12.1°</div>
+            </div>
+            <div style="font-size:10px;color:#ff00ff;margin-top:4px;">ROLL</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:12px;font-size:10px;color:#666;">BLE: Connected | WiFi: 192.168.1.100</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>3D 模型可视化</h3>
+      <p>浅色背景 + 屏幕中央 3D 方块/模型随 MPU6050 实时旋转。LVGL 的 3D 绘图能力展示。</p>
+      <div style="background:#f0f0f0;border-radius:12px;padding:16px;margin-top:12px;">
+        <div style="text-align:center;font-size:11px;color:#666;margin-bottom:8px;">3D VISUALIZATION</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
+          <div style="width:100px;height:100px;position:relative;">
+            <div style="width:60px;height:60px;background:linear-gradient(135deg,#4a9eff,#2d6bc4);transform:perspective(200px) rotateX(-15deg) rotateY(25deg);border-radius:4px;box-shadow:4px 4px 8px rgba(0,0,0,0.2);position:absolute;top:20px;left:20px;"></div>
+          </div>
+          <div style="font-size:11px;color:#333;">
+            <div>Pitch: <b>-15.2°</b></div>
+            <div>Roll: <b>25.1°</b></div>
+            <div>Yaw: <b>0.0°</b></div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:8px;font-size:10px;color:#999;">Mode: Free Rotation</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>混合模式</h3>
+      <p>左侧 3D 模型 + 右侧实时数据图表，底部状态栏。信息量大，展示综合能力。</p>
+      <div style="background:#1e1e2e;border-radius:12px;padding:12px;margin-top:12px;color:#fff;font-size:10px;">
+        <div style="text-align:center;color:#888;margin-bottom:6px;">HYBRID MODE</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;background:#2a2a3e;border-radius:8px;padding:8px;text-align:center;">
+            <div style="width:60px;height:60px;background:linear-gradient(135deg,#4a9eff,#2d6bc4);transform:perspective(150px) rotateX(-10deg) rotateY(20deg);border-radius:3px;margin:0 auto;"></div>
+            <div style="font-size:9px;color:#4a9eff;margin-top:4px;">3D Model</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+            <div style="background:#2a2a3e;border-radius:6px;padding:6px;">
+              <div style="color:#00fff5;">Pitch: -15.2°</div>
+              <div style="height:4px;background:#333;border-radius:2px;margin-top:3px;"><div style="width:40%;height:100%;background:#00fff5;border-radius:2px;"></div></div>
+            </div>
+            <div style="background:#2a2a3e;border-radius:6px;padding:6px;">
+              <div style="color:#ff00ff;">Roll: 25.1°</div>
+              <div style="height:4px;background:#333;border-radius:2px;margin-top:3px;"><div style="width:60%;height:100%;background:#ff00ff;border-radius:2px;"></div></div>
+            </div>
+            <div style="background:#2a2a3e;border-radius:6px;padding:6px;">
+              <div style="color:#ffaa00;">Yaw: 0.0°</div>
+              <div style="height:4px;background:#333;border-radius:2px;margin-top:3px;"><div style="width:5%;height:100%;background:#ffaa00;border-radius:2px;"></div></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:6px;color:#555;">BLE: Ready | WiFi: Off</div>
+      </div>
+    </div>
+  </div>
+</div>

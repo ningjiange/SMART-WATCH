@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash \"C:/Users/o/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh\" --project-dir \"D:/STM32CubeFile/IMU手势可视化\")",
+      "Read(//c/Users/o/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/subagent-driven-development/**)",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\' -Filter 'idf.py' -Recurse -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 3 -ExpandProperty FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\' -Filter 'idf.py' -Recurse -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 3 -ExpandProperty FullName\")"
+    ]
+  }
+}

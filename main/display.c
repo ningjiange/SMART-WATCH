@@ -233,7 +233,7 @@ esp_err_t display_init(void) {
     lcd_cmd(0x11);
     vTaskDelay(pdMS_TO_TICKS(120));
     lcd_cmd(0x36);
-    lcd_data(0x48);  // 竖屏：MV=0, MX=0, MY=1
+    lcd_data(0x88);  // 竖屏：MY=1, MX=0, BGR
     lcd_cmd(0x3A);
     lcd_data(0x55);  // 16-bit color
     lcd_cmd(0x29);

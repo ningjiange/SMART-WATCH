@@ -66,7 +66,7 @@ static void sensor_task(void *pvParameters) {
                 xSemaphoreGive(g_data_mutex);
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

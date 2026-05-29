@@ -1,0 +1,4 @@
+# main/idf_component.yml
+dependencies:
+  lvgl/lvgl: "~8.4"
+  esp_lvgl_port: "~2.4"

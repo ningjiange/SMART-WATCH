@@ -40,8 +40,8 @@ esp_err_t mpu6050_init(i2c_master_bus_handle_t bus_handle, mpu6050_data_t *data)
         ESP_LOGE(TAG, "Failed to read WHO_AM_I: %s", esp_err_to_name(ret));
         return ret;
     }
-    ESP_LOGI(TAG, "WHO_AM_I = 0x%02X (expected 0x68)", who_am_i);
-    if (who_am_i != 0x68) {
+    ESP_LOGI(TAG, "WHO_AM_I = 0x%02X", who_am_i);
+    if (who_am_i != 0x68 && who_am_i != 0x70) {
         ESP_LOGE(TAG, "Invalid MPU6050 device! Got 0x%02X", who_am_i);
         return ESP_ERR_INVALID_RESPONSE;
     }

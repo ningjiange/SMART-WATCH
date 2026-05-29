@@ -1,6 +1,5 @@
 // main/display.c — LVGL 8.4 + ILI9341 显示模块
 #include "display.h"
-#include "cube.h"
 #include "esp_log.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
@@ -91,9 +90,6 @@ static void create_ui(void) {
     lv_obj_set_style_text_color(label_title, lv_color_white(), 0);
     lv_obj_set_style_text_font(label_title, &lv_font_montserrat_14, 0);
     lv_obj_align(label_title, LV_ALIGN_TOP_MID, 0, 5);
-
-    // 3D 立方体（上半部分）
-    cube_init(scr);
 
     // Pitch 标签（下半部分）
     label_pitch = lv_label_create(scr);
@@ -206,9 +202,6 @@ void display_update(const mpu6050_data_t *data) {
     if (!label_pitch) {
         create_ui();
     }
-
-    // 更新 3D 立方体
-    cube_update(data->pitch, data->roll);
 
     // 更新角度显示
     char buf[32];

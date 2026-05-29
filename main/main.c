@@ -1,17 +1,23 @@
-// main/main.c — Phase 5: UI 布局 + 占位数据
+// main/main.c — Phase 5: UI 布局 + 传感器集成
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_task_wdt.h"
 #include "driver/i2c_master.h"
 #include "mpu6050.h"
 #include "display.h"
 #include "web_server.h"
+#include "dht11.h"
+#include "buzzer.h"
+#include <math.h>
 
 static const char *TAG = "MAIN";
 
 #define I2C_SDA_PIN  32
 #define I2C_SCL_PIN  33
+#define DHT11_PIN    25
+#define BUZZER_PIN   26
 
 // 全局传感器数据（互斥访问）
 static mpu6050_data_t g_mpu_data;
@@ -19,7 +25,7 @@ static sensor_display_data_t g_display_data;
 static SemaphoreHandle_t g_data_mutex;
 
 // 占位数据来源说明：
-// - 温湿度：DHT11 (GPIO 25) 驱动未实现，暂用占位值
+// - 温湿度：DHT11 (GPIO 25) 已集成，由 sensor_task 实时更新
 // - 时间：NTP 网络同步未实现，暂用占位字符串
 // - 天气：wttr.in API 未实现，暂用占位文本
 // - IMU：MPU6050 已实现真实数据读取
@@ -46,6 +52,37 @@ static void mpu_task(void *pvParameters) {
             }
         }
         vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+// DHT11 传感器任务（读取温湿度）
+static void sensor_task(void *pvParameters) {
+    float temp, humi;
+    while (1) {
+        if (dht11_read(&temp, &humi) == ESP_OK) {
+            if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+                g_display_data.temperature = temp;
+                g_display_data.humidity = humi;
+                xSemaphoreGive(g_data_mutex);
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+
+// 蜂鸣器报警任务
+static void buzzer_task(void *pvParameters) {
+    while (1) {
+        if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            if (fabs(g_display_data.pitch) > 30 || fabs(g_display_data.roll) > 30) {
+                buzzer_short_beep();
+            }
+            if (g_display_data.temperature > 35) {
+                buzzer_long_beep();
+            }
+            xSemaphoreGive(g_data_mutex);
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -90,6 +127,14 @@ void app_main(void) {
     // WiFi 低优先级任务
     xTaskCreate(wifi_task, "wifi_task", 8192, NULL, 2, NULL);
 
+    // 初始化 DHT11 和蜂鸣器
+    dht11_init(DHT11_PIN);
+    buzzer_init(BUZZER_PIN);
+
+    // 启动传感器和蜂鸣器任务
+    xTaskCreate(sensor_task, "sensor_task", 4096, NULL, 4, NULL);
+    xTaskCreate(buzzer_task, "buzzer_task", 2048, NULL, 3, NULL);
+
     ESP_LOGI(TAG, "Starting display loop...");
 
     while (1) {
@@ -99,9 +144,7 @@ void app_main(void) {
             g_display_data.roll = g_mpu_data.roll;
 
             // === 占位数据（后续替换为真实数据源） ===
-            // DHT11 温湿度（GPIO 25，驱动未实现）
-            g_display_data.temperature = 25.0f;
-            g_display_data.humidity = 50.0f;
+            // DHT11 温湿度：由 sensor_task 实时更新
 
             // NTP 时间（驱动未实现）
             snprintf(g_display_data.time_str, sizeof(g_display_data.time_str), "12:34");

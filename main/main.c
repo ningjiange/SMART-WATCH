@@ -1,4 +1,4 @@
-// main/main.c — Phase 3: LVGL + 3D 立方体 + WiFi Web Server
+// main/main.c — Phase 4: LVGL + 3D 立方体 + WiFi + BLE
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -19,11 +19,10 @@ static SemaphoreHandle_t g_data_mutex;
 
 // MPU6050 任务（高优先级，独立 I2C 访问）
 static void mpu_task(void *pvParameters) {
-    // 禁用此任务的看门狗
     esp_task_wdt_delete(NULL);
 
     i2c_master_bus_handle_t bus_handle = (i2c_master_bus_handle_t)pvParameters;
-    vTaskDelay(pdMS_TO_TICKS(1000));  // 等待 WiFi 初始化完成
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     mpu6050_data_t local_data;
     if (mpu6050_init(bus_handle, &local_data) != ESP_OK) {
@@ -43,7 +42,7 @@ static void mpu_task(void *pvParameters) {
     }
 }
 
-// WiFi 任务（低优先级）
+// WiFi 任务
 static void wifi_task(void *pvParameters) {
     ESP_LOGI(TAG, "WiFi task started");
     web_server_init();
@@ -78,7 +77,7 @@ void app_main(void) {
         while (1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
     }
 
-    // MPU6050 独立高优先级任务，固定到 Core 1
+    // MPU6050 固定到 Core 1
     xTaskCreatePinnedToCore(mpu_task, "mpu_task", 4096, bus_handle, 5, NULL, 1);
 
     // WiFi 低优先级任务
@@ -86,7 +85,6 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "Starting display loop...");
 
-    // 主循环只负责显示更新
     while (1) {
         if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             display_update(&g_mpu_data);

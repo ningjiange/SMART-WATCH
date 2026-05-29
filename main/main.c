@@ -10,8 +10,6 @@
 #include "web_server.h"
 #include "dht11.h"
 #include "buzzer.h"
-#include "input.h"
-#include "page_manager.h"
 #include <math.h>
 
 static const char *TAG = "MAIN";
@@ -133,10 +131,6 @@ void app_main(void) {
     dht11_init(DHT11_PIN);
     buzzer_init(BUZZER_PIN);
 
-    // 初始化输入设备和页面管理器
-    input_init();
-    page_manager_init();
-
     // 启动传感器和蜂鸣器任务
     xTaskCreate(sensor_task, "sensor_task", 4096, NULL, 4, NULL);
     xTaskCreate(buzzer_task, "buzzer_task", 2048, NULL, 3, NULL);
@@ -144,18 +138,6 @@ void app_main(void) {
     ESP_LOGI(TAG, "Starting display loop...");
 
     while (1) {
-        // 处理按键输入
-        input_event_t event = input_read();
-        if (event == INPUT_UP) {
-            page_manager_next();
-            ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
-        } else if (event == INPUT_DOWN) {
-            page_manager_prev();
-            ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
-        } else if (event == INPUT_SELECT) {
-            page_manager_select();
-        }
-
         if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             // 填充显示数据
             g_display_data.pitch = g_mpu_data.pitch;

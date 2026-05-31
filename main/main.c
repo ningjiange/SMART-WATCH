@@ -212,7 +212,7 @@ static void tools_mode_switch(void) {
 }
 
 void app_main(void) {
-    ESP_LOGI(TAG, "=== IMU Gesture Visualizer - Phase 5 ===");
+    ESP_LOGI(TAG, "=== ESP32 智能手表 - Phase 5 ===");
 
     g_data_mutex = xSemaphoreCreateMutex();
 

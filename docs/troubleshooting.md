@@ -1,8 +1,8 @@
-# IMU Gesture Visualizer — 问题排查与解决方案
+# ESP32 智能手表 — 问题排查与解决方案
 
 ## 项目概述
 
-ESP32 + MPU6050 + ILI9341 TFT 屏幕 + WiFi Web Server 的 IMU 手势可视化项目。
+ESP32 + MPU6050 + ILI9341 TFT 屏幕 + WiFi Web Server 的智能手表项目。
 
 ---
 

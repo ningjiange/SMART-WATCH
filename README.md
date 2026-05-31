@@ -1,4 +1,4 @@
-# ESP32 智能手表 - IMU Gesture Visualizer
+# ESP32 智能手表
 
 基于 ESP32 的智能手表项目，集成姿态传感器、TFT 屏幕、温湿度传感器等多种功能模块。
 

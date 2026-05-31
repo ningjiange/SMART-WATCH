@@ -1,11 +1,30 @@
+# 编译产物
 build/
 sdkconfig
 sdkconfig.old
 *.pyc
 __pycache__/
+
+# IDE 配置
 .vscode/
+.claude/
+.superpowers/
+.clangd
 *.swp
 *~
+
+# 辅助脚本
+check_proc.ps1
+find_com.ps1
+find_usb.ps1
+monitor.py
+read_serial.py
+
+# 依赖组件（可通过 idf.py reconfigure 重新下载）
+managed_components/
+dependencies.lock
+
+# 构建脚本
 build.ps1
 build.bat
 build_temp.bat

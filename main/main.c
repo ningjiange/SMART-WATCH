@@ -1,4 +1,4 @@
-// main/main.c — Phase 5: UI 布局 + 传感器集成
+// main/main.c — Phase 5: 多页面 UI + 传感器 + 秒表/倒计时
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -12,6 +12,14 @@
 #include "buzzer.h"
 #include "input.h"
 #include "page_manager.h"
+#include "stopwatch.h"
+#include "countdown.h"
+#include "pedometer.h"
+#include "motion_detect.h"
+#include "flashlight.h"
+#include "ntp_sync.h"
+#include "weather.h"
+#include "system_info.h"
 #include <math.h>
 
 static const char *TAG = "MAIN";
@@ -26,11 +34,8 @@ static mpu6050_data_t g_mpu_data;
 static sensor_display_data_t g_display_data;
 static SemaphoreHandle_t g_data_mutex;
 
-// 占位数据来源说明：
-// - 温湿度：DHT11 (GPIO 25) 已集成，由 sensor_task 实时更新
-// - 时间：NTP 网络同步未实现，暂用占位字符串
-// - 天气：wttr.in API 未实现，暂用占位文本
-// - IMU：MPU6050 已实现真实数据读取
+// 工具页面状态
+static uint8_t tool_mode = 0;  // 0=秒表，1=倒计时
 
 // MPU6050 任务（高优先级，独立 I2C 访问）
 static void mpu_task(void *pvParameters) {
@@ -48,6 +53,10 @@ static void mpu_task(void *pvParameters) {
 
     while (1) {
         if (mpu6050_read(&local_data) == ESP_OK) {
+            // 更新计步器和运动检测
+            pedometer_update(local_data.accel_x, local_data.accel_y, local_data.accel_z);
+            motion_detect_update(local_data.accel_x, local_data.accel_y, local_data.accel_z);
+
             if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
                 g_mpu_data = local_data;
                 xSemaphoreGive(g_data_mutex);
@@ -82,6 +91,13 @@ static void buzzer_task(void *pvParameters) {
             if (g_display_data.temperature > 35) {
                 buzzer_long_beep();
             }
+
+            // 倒计时结束时蜂鸣
+            if (countdown_is_finished()) {
+                buzzer_long_beep();
+                countdown_reset();
+            }
+
             xSemaphoreGive(g_data_mutex);
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -92,6 +108,17 @@ static void buzzer_task(void *pvParameters) {
 static void wifi_task(void *pvParameters) {
     ESP_LOGI(TAG, "WiFi task started");
     web_server_init();
+
+    // 初始化 NTP 时间同步
+    ntp_sync_init();
+
+    // 初始化天气模块
+    weather_init();
+
+    // 等待 WiFi 连接后更新天气
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    weather_update();
+
     vTaskDelete(NULL);
 }
 
@@ -100,19 +127,87 @@ static void button_task(void *pvParameters) {
     ESP_LOGI(TAG, "Button task started");
     while (1) {
         input_event_t event = input_read();
+        page_id_t current = page_manager_get_current();
+
+        if (event != INPUT_NONE) {
+            ESP_LOGI(TAG, "Event: %d, Page: %d, ToolMode: %d", event, current, tool_mode);
+        }
+
         if (event == INPUT_UP) {
-            page_manager_next();
-            ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
-            vTaskDelay(pdMS_TO_TICKS(300));  // 防抖等待
+            if (current == PAGE_TOOLS) {
+                if (tool_mode == 1) {
+                    // 倒计时选中：UP 切换到秒表
+                    tool_mode = 0;
+                    ESP_LOGI(TAG, "Tool: Stopwatch");
+                } else {
+                    // 秒表选中：UP 切换到上一页
+                    page_manager_prev();
+                    ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
+                }
+            } else {
+                page_manager_prev();
+                ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
+            }
+            vTaskDelay(pdMS_TO_TICKS(300));
         } else if (event == INPUT_DOWN) {
-            page_manager_prev();
-            ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
+            if (current == PAGE_TOOLS) {
+                if (tool_mode == 0) {
+                    // 秒表选中：DOWN 切换到倒计时
+                    tool_mode = 1;
+                    ESP_LOGI(TAG, "Tool: Countdown");
+                } else {
+                    // 倒计时选中：DOWN 切换到下一页
+                    page_manager_next();
+                    ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
+                }
+            } else {
+                page_manager_next();
+                ESP_LOGI(TAG, "Page: %d", page_manager_get_current());
+            }
             vTaskDelay(pdMS_TO_TICKS(300));
         } else if (event == INPUT_SELECT) {
-            page_manager_select();
+            if (current == PAGE_TOOLS) {
+                // 工具页面：SELECT 启动/停止当前工具
+                if (tool_mode == 0) {
+                    // 秒表模式
+                    if (stopwatch_is_running()) {
+                        stopwatch_stop();
+                        ESP_LOGI(TAG, "Stopwatch stopped");
+                    } else {
+                        if (stopwatch_get_ms() == 0) {
+                            stopwatch_reset();
+                        }
+                        stopwatch_start();
+                        ESP_LOGI(TAG, "Stopwatch started");
+                    }
+                } else {
+                    // 倒计时模式
+                    if (countdown_is_running()) {
+                        countdown_stop();
+                        ESP_LOGI(TAG, "Countdown stopped");
+                    } else {
+                        countdown_start();
+                        ESP_LOGI(TAG, "Countdown started");
+                    }
+                }
+            } else if (current == PAGE_GAME) {
+                // 手电筒页面：切换开关
+                flashlight_toggle();
+                ESP_LOGI(TAG, "Flashlight toggled");
+            } else {
+                page_manager_select();
+            }
             vTaskDelay(pdMS_TO_TICKS(300));
         }
-        vTaskDelay(pdMS_TO_TICKS(10));  // 10ms 检测一次
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+// 工具页面长按切换模式（通过 UP+SELECT 组合）
+static void tools_mode_switch(void) {
+    if (page_manager_get_current() == PAGE_TOOLS) {
+        tool_mode = (tool_mode + 1) % 2;
+        ESP_LOGI(TAG, "Tool mode: %s", tool_mode == 0 ? "Stopwatch" : "Countdown");
     }
 }
 
@@ -154,6 +249,20 @@ void app_main(void) {
     dht11_init(DHT11_PIN);
     buzzer_init(BUZZER_PIN);
 
+    // 初始化秒表和倒计时
+    stopwatch_init();
+    countdown_init();
+
+    // 初始化计步器和运动检测
+    pedometer_init();
+    motion_detect_init();
+
+    // 初始化手电筒
+    flashlight_init();
+
+    // 初始化系统信息
+    system_info_init();
+
     // 启动传感器和蜂鸣器任务
     xTaskCreate(sensor_task, "sensor_task", 4096, NULL, 4, NULL);
     xTaskCreate(buzzer_task, "buzzer_task", 2048, NULL, 3, NULL);
@@ -168,22 +277,41 @@ void app_main(void) {
     ESP_LOGI(TAG, "Starting display loop...");
 
     while (1) {
+        // 更新秒表和倒计时
+        stopwatch_update();
+        countdown_update();
+
+
         if (xSemaphoreTake(g_data_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             // 填充显示数据
             g_display_data.pitch = g_mpu_data.pitch;
             g_display_data.roll = g_mpu_data.roll;
 
-            // === 占位数据（后续替换为真实数据源） ===
-            // DHT11 温湿度：由 sensor_task 实时更新
+            // NTP 时间
+            ntp_sync_get_time_str(g_display_data.time_str, sizeof(g_display_data.time_str));
 
-            // NTP 时间（驱动未实现）
-            snprintf(g_display_data.time_str, sizeof(g_display_data.time_str), "12:34");
-
-            // wttr.in 天气（驱动未实现）
-            snprintf(g_display_data.weather, sizeof(g_display_data.weather), "Weather: --");
+            // 天气信息
+            weather_get_info(g_display_data.weather, sizeof(g_display_data.weather));
 
             // WiFi 状态
             snprintf(g_display_data.wifi_status, sizeof(g_display_data.wifi_status), "Connected");
+
+            // 秒表时间
+            stopwatch_get_time(g_display_data.stopwatch_str, sizeof(g_display_data.stopwatch_str));
+
+            // 倒计时时间
+            countdown_get_time(g_display_data.countdown_str, sizeof(g_display_data.countdown_str));
+
+            // 工具模式
+            g_display_data.tool_mode = tool_mode;
+
+            // 手电筒状态
+            g_display_data.flashlight_on = flashlight_is_on();
+
+            // 运动数据
+            g_display_data.steps = pedometer_get_steps();
+            g_display_data.motion_state = motion_detect_get_state();
+            g_display_data.calories = motion_detect_get_calories();
 
             xSemaphoreGive(g_data_mutex);
 
